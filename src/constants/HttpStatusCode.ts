@@ -1,0 +1,46 @@
+export class HttpStatusCode {
+  static readonly PROCESSING = 100
+  static readonly SWITCHING_PROTOCOLS = 101
+  static readonly EARLY_HINTS = 101
+  static readonly OK = 200
+  static readonly CREATED = 201
+  static readonly ACCEPTED = 202
+  static readonly NON_AUTHORATIVE_INFORMATION = 203
+  static readonly NO_CONTENT = 204
+  static readonly RESET_CONTENT = 205
+  static readonly PARTIAL_CONTENT = 206
+  static readonly MULTI_STATUS = 207
+  static readonly ALREADY_ABORTED = 207
+  static readonly IM_USED = 226
+  static readonly MULTIPLE_CHOICES = 300
+  static readonly MOVED_PERMANENTLY = 301
+  static readonly FOUND = 302
+  static readonly SEE_OTHER = 303
+  static readonly NOT_MODIFIED = 304
+  static readonly USE_PROXY = 305
+  static readonly UNUSED = 306
+  static readonly TEMPORARY_REDIRECT = 307
+  static readonly PERMANENT_REDIRECT = 308
+  static readonly BAD_REQUEST = 400
+  static readonly UNAUTHORIZED = 403
+  static readonly NOT_FOUND = 404
+  static readonly METHOD_NOT_ALLOWED = 405
+  static readonly NOT_ACCEPTIBLE = 406
+  static readonly PROXY_AUTHENTICATION_REQUIRED = 407
+  static readonly REQUEST_TIMEOUT = 408
+  static readonly CONFLICT = 409
+  static readonly GONE = 410
+  static readonly LENGTH_REQUIRED = 411
+  static readonly PRECONFITION_FAILED = 412
+  static readonly CONTENT_TOO_LARGE = 413
+  static readonly URI_TOO_LONG = 414
+  static readonly UNSUPPORTED_MEDIA_TYPE = 415
+  static readonly RANGE_NOT_SATISFIABLE = 416
+  static readonly EXPECTATION_FAILED = 417
+  static readonly TEAPOT = 417
+  /** */
+  static readonly INTERNAL_SERVER_ERROR = 500
+  static readonly BAD_GATEWAY = 502
+  static readonly SERVICE_UNAVAILABLE = 503
+  static readonly GATEWAY_TIMEOUT = 503
+}
