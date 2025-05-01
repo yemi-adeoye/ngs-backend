@@ -4,7 +4,7 @@ configuration() // load environment variables
 import bodyParser from 'body-parser'
 import cors from 'cors'
 import express from 'express'
-import { logger } from './apps/users/middlewares/logger'
+import { logger } from './middlewares/logger'
 import { userRouter } from './apps/users/routes/UserRoute'
 
 import passport from 'passport'
@@ -14,6 +14,10 @@ import {
   verifyJwtStrategy,
 } from './apps/users/middlewares/auth'
 import { authRouter } from './apps/users/routes/AuthRoutes'
+import { profileRouter } from './apps/users/routes/ProfileRoutes'
+import { testRouter } from './apps/users/test/loadTesting'
+import { commentRouter } from './apps/social/routes/CommentsRoutes'
+import { postRouter } from './apps/social/routes/PostRoutes'
 
 const app = express()
 const PORT = process.env.SERVER_PORT
@@ -38,6 +42,10 @@ passport.use('jwt', verifyJwtStrategy)
  */
 app.use('/users', userRouter)
 app.use('/auth', authRouter)
+app.use('/profile', profileRouter)
+app.use('/test', testRouter)
+app.use('/comment', commentRouter)
+app.use('/post', postRouter)
 
 app.get('/', async (req, res) => {
   res.json({ user: 'hello' })

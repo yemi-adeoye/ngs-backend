@@ -1,7 +1,9 @@
 export interface User {
+  [key: string]: any
   id: number
   firstName: string
   lastName: string
+  username: string
   email: string
   dob: Date
   sex: number

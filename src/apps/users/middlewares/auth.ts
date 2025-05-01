@@ -2,10 +2,61 @@ import bcrypt from 'bcrypt'
 import { ExtractJwt, Strategy as JwtStrategy } from 'passport-jwt'
 import { Strategy as LocalStrategy } from 'passport-local'
 import { userService } from '../services/UserService'
-import { Logger } from './logger'
+import { Logger } from '../../../middlewares/logger'
+import { HttpStatusCode } from '../../../constants/HttpStatusCode'
+import jwt from 'jsonwebtoken'
 
 const authLogger = new Logger('Auth Logger')
 const MAX_LOGIN_BEFORE_SUSPENSION = 3
+
+export const isValidUser = async (req: any, res: any, next: Function) => {
+  let token = req.headers['authorization']
+
+  if (jwt) {
+    token = token.replace('Bearer ', '')
+    const APP_SECRET = process.env.APP_SECRET || ''
+
+    if (!APP_SECRET) {
+      authLogger.error(
+        'Auth Router, Error Loading APP_SECRET from environment variables',
+      )
+      return res
+        .status(HttpStatusCode.INTERNAL_SERVER_ERROR)
+        .json({ error: 'Something went wrong' })
+    }
+
+    try {
+      const decoded: any = await jwt.verify(token, APP_SECRET)
+
+      const id = decoded?.user.id
+
+      const { userId } = req.body
+
+      const actor = await userService.getUser('id', userId)
+
+      if (id != userId) {
+        // this operation is not being perfomed by actual user check if actor is admin
+
+        if (actor?.dataValues.role !== 'ADMIN') {
+          res.status(HttpStatusCode.FORBIDDEN).json({ error: 'Forbidden' })
+          return
+        }
+      }
+
+      req.validUser = actor
+    } catch (error) {
+      authLogger.error(`Auth Router, Error decoding JWT ${error}`)
+      return res
+        .status(HttpStatusCode.INTERNAL_SERVER_ERROR)
+        .json({ error: 'Something went wrong' })
+    }
+
+    next()
+    return
+  }
+
+  res.status(HttpStatusCode.FORBIDDEN).json({ error: 'Forbidden' })
+}
 
 /**
  * Updates the users invalidLogin count and suspended status on unsuccessful login attemps

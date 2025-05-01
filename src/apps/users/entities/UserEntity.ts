@@ -47,7 +47,7 @@ UserEntity.init(
     },
     isSuspended: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true,
+      defaultValue: false,
     },
     lastSuccessfulLogin: {
       type: DataTypes.DATE,
@@ -61,13 +61,15 @@ UserEntity.init(
       type: DataTypes.SMALLINT,
       defaultValue: 0,
     },
+    roles: {
+      type: DataTypes.JSON,
+      defaultValue: ['USER'],
+    },
   },
   {
     sequelize,
     modelName: 'users',
   },
 )
-
-UserEntity.sync()
 
 export default UserEntity

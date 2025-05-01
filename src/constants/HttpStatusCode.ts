@@ -22,7 +22,8 @@ export class HttpStatusCode {
   static readonly TEMPORARY_REDIRECT = 307
   static readonly PERMANENT_REDIRECT = 308
   static readonly BAD_REQUEST = 400
-  static readonly UNAUTHORIZED = 403
+  static readonly UNAUTHORIZED = 401
+  static readonly FORBIDDEN = 403
   static readonly NOT_FOUND = 404
   static readonly METHOD_NOT_ALLOWED = 405
   static readonly NOT_ACCEPTIBLE = 406

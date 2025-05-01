@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 29f587bf44adc68df6ac91c0d51304cce74dd3c4da9e5c031dc927e6e2a9fa53
+      MYSQL_PASSWORD: 29f587bf44adc68df6ac91c0d51304cce74dd3c4da9e5c031dc927e6e2a9fa53
+      MYSQL_DATABASE: db_naija_gist_soccer
+      MYSQL_USER: db_naija_user_local
+    ports:
+      - 3306:3306

@@ -1,5 +1,9 @@
 import { Sequelize } from 'sequelize'
 import { OPEN_CREATE, OPEN_FULLMUTEX, OPEN_READWRITE } from 'sqlite3'
+import { createClient } from 'redis'
+import { Logger } from '../middlewares/logger'
+
+const dataSourceLogger = new Logger('DataSource')
 
 /**
  * Define datasources used throughout the application
@@ -11,6 +15,27 @@ class DataSource {
     if (DataSource.sequelize) {
       return DataSource.sequelize
     }
+    return DataSource.sequelize
+  }
+
+  connectMySQL() {
+    DataSource.sequelize = new Sequelize(
+      process.env.RELATIONAL_DATASOURCE || '',
+      process.env.RELATIONAL_DATASOURCE_USERNAME || '',
+      process.env.RELATIONAL_DATASOURCE_PASSWORD || '',
+      {
+        host: 'localhost',
+        port: 3306,
+        dialect: 'mysql',
+        retry: {
+          match: [/Deadlock/i],
+          max: 3,
+          backoffBase: 1000,
+          backoffExponent: 1.5,
+        },
+      },
+    )
+
     return DataSource.sequelize
   }
 
@@ -26,14 +51,26 @@ class DataSource {
     return DataSource.sequelize
   }
 
+  connectRedis(): Promise<any> {
+    const client = createClient({
+      password: process.env.REDIS_PASSWORD,
+    })
+      .on('error', (error) => dataSourceLogger.error(error + ''))
+      .on('connect', () => dataSourceLogger.log('Redis connected successfully'))
+      .connect()
+
+    return client
+  }
+
   async testConnection() {
     try {
       await DataSource.sequelize.authenticate()
-      console.log('Database Connection established')
+      dataSourceLogger.log('Database Connection established')
     } catch (error) {
-      console.log(`Error connecting to database ${error}`)
+      dataSourceLogger.error(`Error connecting to database ${error}`)
     }
   }
 }
-
-export const sequelize = new DataSource().connectRds()
+const dataSource = new DataSource()
+export const sequelize = dataSource.connectMySQL()
+export const redisConnection = dataSource.connectRedis()

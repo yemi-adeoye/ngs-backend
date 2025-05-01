@@ -1,4 +1,4 @@
-import { LogLevels } from '../../../constants/LogLevel'
+import { LogLevels } from '../constants/LogLevel'
 
 export const logger = (req: any, res: any, next: Function) => {
   const oldResponseJSON = res.json

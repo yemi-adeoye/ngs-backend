@@ -2,7 +2,7 @@ import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import passport from 'passport'
 import { HttpStatusCode } from '../../../constants/HttpStatusCode'
-import { Logger } from '../middlewares/logger'
+import { Logger } from '../../../middlewares/logger'
 
 export const authRouter = Router()
 
@@ -17,7 +17,7 @@ authRouter.post('/login', async (req: any, res: any, next) => {
 
       // without app secret jwt tokens cant be signed and verified securely, fail gracefully and log error
       if (!APP_SECRET) {
-        authRouteLogger.log(
+        authRouteLogger.error(
           'Auth Router, Error Loading APP_SECRET from environment variables',
         )
         return res
@@ -27,7 +27,6 @@ authRouter.post('/login', async (req: any, res: any, next) => {
 
       try {
         if (err || !user) {
-          const error = new Error('Something went wrong')
           return res
             .status(HttpStatusCode.BAD_REQUEST)
             .json({ error: info.message })
@@ -38,7 +37,7 @@ authRouter.post('/login', async (req: any, res: any, next) => {
           }
 
           // defines fields to be added to the jwt token
-          const body = { email: user.email, phone: user.phone }
+          const body = { id: user.id, email: user.email, phone: user.phone }
 
           // set token expiry based on user's option to stay logged in
           const loginOption = req.body.stayLoggedIn ? 24 * 30 : 24
