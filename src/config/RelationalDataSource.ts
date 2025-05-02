@@ -59,6 +59,10 @@ class DataSource {
         process.env.RELATIONAL_DATASOURCE_PASSWORD_SHARD_3,
         process.env.RELATIONAL_DATASOURCE_PORT_SHARD_3,
       ),
+      GLOBAL: this.createSequelizeClient(
+        process.env.MYSQL_ROOT_PASSWORD_GLOBAL,
+        process.env.RELATIONAL_DATASOURCE_PORT_GLOBAL,
+      ),
     }
 
     return this.sequelizeClients
@@ -66,9 +70,9 @@ class DataSource {
 
   async testConnection() {
     try {
-      Object.keys(this.sequelizeClients).forEach(async (client, index) => {
+      Object.keys(this.sequelizeClients).forEach(async (client) => {
         await this.sequelizeClients[client].authenticate()
-        dataSourceLogger.log(`Connection to shard ${index} established`)
+        dataSourceLogger.log(`Connection to shard ${client} established`)
       })
     } catch (error) {
       dataSourceLogger.error(`Error connecting to database ${error}`)

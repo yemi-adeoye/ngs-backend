@@ -23,3 +23,11 @@ services:
       - MYSQL_ALLOW_EMPTY_PASSWORD=false
     ports:
       - 3308:3306
+  mysql-global:
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD_GLOBAL}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ALLOW_EMPTY_PASSWORD=false
+    ports:
+      - 3309:3306

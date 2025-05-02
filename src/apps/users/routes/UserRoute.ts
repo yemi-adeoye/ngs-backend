@@ -4,17 +4,21 @@ import { HttpStatusCode } from '../../../constants/HttpStatusCode'
 import { Logger } from '../../../middlewares/logger'
 import { User } from '../models/Users'
 import { userService } from '../services/UserService'
+import { userExists } from '../middlewares/auth'
 export const userRouter = Router()
 
 const userRouteLogger = new Logger('UserRoute')
 
 userRouter.post(
   '/',
+  userExists,
   // passport.authenticate('register', { session: false }),
   async (req: any, res) => {
     const userDto: User = { ...req.body }
 
-    if (req.user?.registeredUser != null) {
+    console.log({ user: req.user })
+
+    if (req.user?.registeredUser == null) {
       userRouteLogger.log(`DUPLICATE USER: ${JSON.stringify(req.user)}`)
 
       res

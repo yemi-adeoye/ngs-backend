@@ -5,6 +5,7 @@ import { userService } from '../services/UserService'
 import { Logger } from '../../../middlewares/logger'
 import { HttpStatusCode } from '../../../constants/HttpStatusCode'
 import jwt from 'jsonwebtoken'
+import { User } from '../models/Users'
 
 const authLogger = new Logger('Auth Logger')
 const MAX_LOGIN_BEFORE_SUSPENSION = 3
@@ -196,10 +197,12 @@ export const localStrategy = new LocalStrategy(
   },
   registrationHandler,
 )
+
 export const loginStrategy = new LocalStrategy(
   { usernameField: 'email', passwordField: 'password' },
   login,
 )
+
 export const verifyJwtStrategy = new JwtStrategy(
   {
     secretOrKey: process.env.APP_SECRET || '',
@@ -207,3 +210,15 @@ export const verifyJwtStrategy = new JwtStrategy(
   },
   verifyJwtToken,
 )
+
+export const userExists = async (req: any, res: any, next: Function) => {
+  const userDto: User = { ...req.body }
+
+  req.user = {}
+
+  const userGlobal = await userService.createGlobalUser(userDto)
+
+  req.user.registeredUser = userGlobal?.dataValues
+
+  next()
+}

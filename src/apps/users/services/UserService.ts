@@ -9,6 +9,7 @@ import { Profile } from '../models/Profile'
 import { User } from '../models/Users'
 import { graph } from './GraphService'
 import { queueService } from './QueueService'
+import GlobalEntity from '../entities/GlobalEntity'
 /**
  * Han
  */
@@ -87,6 +88,22 @@ class UserService {
     }
 
     return result
+  }
+
+  async createGlobalUser(userDto: User): Promise<GlobalEntity | null> {
+    const user: GlobalEntity = GlobalEntity.build({
+      ...userDto,
+    })
+
+    let userDb = null
+
+    try {
+      userDb = await user.save()
+    } catch (error) {
+      this.userServiceLogger.error(`Cannot create user: ${userDto}, ${error}`)
+    }
+
+    return userDb
   }
 
   /**
