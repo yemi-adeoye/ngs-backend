@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
 import { QueryTypes, Transaction } from 'sequelize'
-import { sequelize } from '../../../config/DataSource'
+import { sequelize } from '../../../config/RelationalDataSource'
 import { Logger } from '../../../middlewares/logger'
 import FollowingEntity from '../entities/FollowEntity'
 import ProfileEntity from '../entities/ProfileEntity'
@@ -12,13 +12,27 @@ import { queueService } from './QueueService'
 /**
  * Han
  */
+
+function* ShardResolver() {
+  let i = 0
+  while (true) {
+    if (i >= 3) {
+      i = 1
+    } else {
+      i++
+    }
+    yield i
+  }
+}
+
 class UserService {
   private static instance: UserService
   readonly SALT_ROUNDS: number = 10
+  readonly shardResolver = ShardResolver()
 
   userServiceLogger = new Logger(this.constructor.name)
 
-  constructor() {
+  private constructor() {
     UserService.instance = this
   }
 
@@ -37,26 +51,39 @@ class UserService {
   async createUser(userDto: User): Promise<UserEntity | null> {
     let result = null
 
+    const shardToWriteTo = this.shardResolver.next().value
+
+    console.log({ shardToWriteTo })
+
     try {
-      result = await sequelize.transaction(async (t: any) => {
-        const userProfile = ProfileEntity.build({})
+      // check global table to see if user exist // TODO write this code
 
-        const userProfileDb = await userProfile.save({ transaction: t })
+      result = await sequelize[`${shardToWriteTo}`].transaction(
+        async (t: any) => {
+          // populate user entity
+          const user: UserEntity = UserEntity.build({
+            ...userDto,
+          })
 
-        const user: UserEntity = UserEntity.build({
-          ...userDto,
-          profileId: userProfileDb.dataValues.id,
-        })
+          // update password with hashed value
+          user.dataValues.password = bcrypt.hashSync(
+            user.dataValues.password,
+            this.SALT_ROUNDS,
+          )
 
-        user.dataValues.password = bcrypt.hashSync(
-          user.dataValues.password,
-          this.SALT_ROUNDS,
-        )
+          const userDb = await user.save({ transaction: t })
 
-        return user.save({ transaction: t })
-      })
+          const userProfile = ProfileEntity.build({
+            userId: userDb.dataValues.id,
+          })
+
+          await userProfile.save({ transaction: t })
+
+          return userDb
+        },
+      )
     } catch (error) {
-      this.userServiceLogger.error(error + '')
+      this.userServiceLogger.error(`${error}`)
     }
 
     return result
@@ -133,7 +160,8 @@ class UserService {
     followTo: string | number,
   ): Promise<boolean> {
     try {
-      await sequelize.transaction(async (t: any) => {
+      await sequelize[0].transaction(async (t: any) => {
+        //TODO fix
         // create follow
         const followEntity = FollowingEntity.build({ followFrom, followTo })
 
@@ -187,7 +215,8 @@ class UserService {
     const query = `SELECT followFrom as userId FROM followings WHERE followTo =  :userId LIMIT 20 OFFSET :offset`
 
     try {
-      const response = await sequelize.query(query, {
+      const response = await sequelize[0].query(query, {
+        //TODO fix
         replacements: { userId: parsedUserID, offset: parsedOffset },
         type: QueryTypes.SELECT,
       })

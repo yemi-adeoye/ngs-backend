@@ -1,4 +1,4 @@
-import { redisConnection } from '../../../config/DataSource'
+import { redisConnection } from '../../../config/RedisDataSource'
 
 /**
  * ngs-graph-follows

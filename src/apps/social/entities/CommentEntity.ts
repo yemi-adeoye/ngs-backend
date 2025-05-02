@@ -1,5 +1,5 @@
 import { DataTypes, Model } from 'sequelize'
-import { sequelize } from '../../../config/DataSource'
+import { sequelize } from '../../../config/RelationalDataSource'
 import CommentMediaEntity from './CommentMediaEntity'
 import CommentReactionEntity from './CommentReactionEntity'
 import UserEntity from '../../users/entities/UserEntity'
@@ -38,13 +38,13 @@ CommentEntity.init(
     },
   },
   {
-    sequelize,
+    sequelize: sequelize[1], //TODO fix
     modelName: 'comments',
   },
 )
 
 UserEntity.hasOne(ProfileEntity, {
-  foreignKey: { name: 'profileId', allowNull: false },
+  foreignKey: { name: 'userId', allowNull: false },
 })
 ProfileEntity.belongsTo(UserEntity)
 

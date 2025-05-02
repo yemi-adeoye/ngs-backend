@@ -1,5 +1,5 @@
 import { DataTypes, Model } from 'sequelize'
-import { sequelize } from '../../../config/DataSource'
+import { sequelize } from '../../../config/RelationalDataSource'
 
 class CommentMediaEntity extends Model {}
 
@@ -15,7 +15,7 @@ CommentMediaEntity.init(
     },
   },
   {
-    sequelize,
+    sequelize: sequelize[1],
     modelName: 'comment_media',
   },
 )

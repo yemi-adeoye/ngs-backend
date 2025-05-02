@@ -1,5 +1,5 @@
 import { DataTypes, Model } from 'sequelize'
-import { sequelize } from '../../../config/DataSource'
+import { sequelize } from '../../../config/RelationalDataSource'
 
 class ProfileEntity extends Model {}
 
@@ -22,7 +22,7 @@ ProfileEntity.init(
       defaultValue: 0,
     },
   },
-  { sequelize, modelName: 'profiles' },
+  { sequelize: sequelize[1], modelName: 'profiles' },
 )
 
 export default ProfileEntity

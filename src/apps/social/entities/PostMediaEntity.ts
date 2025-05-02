@@ -1,5 +1,5 @@
 import { DataTypes, Model } from 'sequelize'
-import { sequelize } from '../../../config/DataSource'
+import { sequelize } from '../../../config/RelationalDataSource'
 
 class PostMediaEntity extends Model {}
 
@@ -15,7 +15,7 @@ PostMediaEntity.init(
     },
   },
   {
-    sequelize,
+    sequelize: sequelize[1],
     modelName: 'post_media',
   },
 )

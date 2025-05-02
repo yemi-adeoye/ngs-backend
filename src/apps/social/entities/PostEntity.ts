@@ -1,5 +1,5 @@
 import { DataTypes, Model } from 'sequelize'
-import { sequelize } from '../../../config/DataSource'
+import { sequelize } from '../../../config/RelationalDataSource'
 
 class PostEntity extends Model {}
 
@@ -34,7 +34,7 @@ PostEntity.init(
     },
   },
   {
-    sequelize,
+    sequelize: sequelize[1],
     modelName: 'posts',
   },
 )

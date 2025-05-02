@@ -10,7 +10,7 @@ const userRouteLogger = new Logger('UserRoute')
 
 userRouter.post(
   '/',
-  passport.authenticate('register', { session: false }),
+  // passport.authenticate('register', { session: false }),
   async (req: any, res) => {
     const userDto: User = { ...req.body }
 
