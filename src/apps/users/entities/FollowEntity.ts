@@ -26,6 +26,11 @@ FollowingEntity.init(
   },
 )
 
-FollowingEntity.sync()
+try {
+  FollowingEntity.sync()
+} catch (error: any) {
+  console.log(error)
+}
+
 
 export default FollowingEntity

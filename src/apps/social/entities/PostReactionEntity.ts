@@ -1,7 +1,7 @@
 import { DataTypes, Model } from 'sequelize'
 import { sequelize } from '../../../config/RelationalDataSource'
 
-class PostReactionEntity extends Model {}
+class PostReactionEntity extends Model { }
 
 PostReactionEntity.init(
   {

@@ -1,7 +1,7 @@
 services:
   redis-shard-1:
     image: redis:latest
-    container_name: shard-1
+    container_name: ngs-redis-shard-1
     ports:
       - '6379:6379'
     volumes:
@@ -9,9 +9,11 @@ services:
     environment:
       - REDIS_PASSWORD=${REDIS_SHARD_1_PASSWORD}
     command: ['redis-server', '--requirepass', '${REDIS_SHARD_1_PASSWORD}']
+    networks:
+      - ngs-network
   redis-shard-2:
     image: redis:latest
-    container_name: shard-2
+    container_name: ngs-redis-shard-2
     ports:
       - '6380:6379'
     volumes:
@@ -19,9 +21,11 @@ services:
     environment:
       - REDIS_PASSWORD=${REDIS_SHARD_2_PASSWORD}
     command: ['redis-server', '--requirepass', '${REDIS_SHARD_2_PASSWORD}']
+    networks:
+      - ngs-network
   redis-shard-3:
     image: redis:latest
-    container_name: shard-3
+    container_name: ngs-redis-shard-3
     ports:
       - '6381:6379'
     volumes:
@@ -29,8 +33,14 @@ services:
     environment:
       - REDIS_PASSWORD=${REDIS_SHARD_3_PASSWORD}
     command: ['redis-server', '--requirepass', '${REDIS_SHARD_3_PASSWORD}']
+    networks:
+      - ngs-network
 
 volumes:
   redis_data_shard_1:
   redis_data_shard_2:
   redis_data_shard_3:
+
+networks:
+  ngs-network:
+    external: true

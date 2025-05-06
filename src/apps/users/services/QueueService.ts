@@ -11,7 +11,7 @@ class QueueService {
 
   private constructor() {
     const connection = {
-      host: 'localhost',
+      host: process.env.REDIS_HOST,
       port: 6379,
       password: process.env.REDIS_PASSWORD,
     }

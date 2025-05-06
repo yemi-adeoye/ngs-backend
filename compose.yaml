@@ -1,0 +1,13 @@
+services:
+  ngs-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ngsv0.0.1
+    ports:
+      - '5000:5000'
+    networks:
+      - ngs-network
+networks:
+  ngs-network:
+    external: true

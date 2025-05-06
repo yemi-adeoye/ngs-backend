@@ -1,33 +1,49 @@
 services:
   mysql-shard-1:
     image: mysql:latest
+    container_name: ngs-mysql-shard-1
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD_1}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_ALLOW_EMPTY_PASSWORD=false
     ports:
       - 3306:3306
+    networks:
+      - ngs-network
   mysql-shard-2:
     image: mysql:latest
+    container_name: ngs-mysql-shard-2
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD_2}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_ALLOW_EMPTY_PASSWORD=false
     ports:
       - 3307:3306
+    networks:
+      - ngs-network
   mysql-shard-3:
     image: mysql:latest
+    container_name: ngs-mysql-shard-3
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD_3}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_ALLOW_EMPTY_PASSWORD=false
     ports:
       - 3308:3306
-  mysql-global:
+    networks:
+      - ngs-network
+  mysql-shard-global:
     image: mysql:latest
+    container_name: ngs-mysql-shard-global
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD_GLOBAL}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_ALLOW_EMPTY_PASSWORD=false
     ports:
       - 3309:3306
+    networks:
+      - ngs-network
+networks:
+  ngs-network:
+    name: ngs-network
+    driver: bridge

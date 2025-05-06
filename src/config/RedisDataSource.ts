@@ -28,7 +28,7 @@ class RedisDataSource {
 
   connectRedis(): Promise<any> {
     const client = createClient({
-      password: process.env.REDIS_PASSWORD,
+      url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:6379`,
     })
       .on('error', (error) => dataSourceLogger.error(error + ''))
       .on('connect', () => dataSourceLogger.log('Redis connected successfully'))

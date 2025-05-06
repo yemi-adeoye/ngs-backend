@@ -1,7 +1,7 @@
 import { DataTypes, Model } from 'sequelize'
 import { sequelize } from '../../../config/RelationalDataSource'
 
-class GlobalEntity extends Model {}
+class GlobalEntity extends Model { }
 
 GlobalEntity.init(
   {

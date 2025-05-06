@@ -8,7 +8,7 @@ import PostEntity from './PostEntity'
 import PostReactionEntity from './PostReactionEntity'
 import PostMediaEntity from './PostMediaEntity'
 
-class CommentEntity extends Model {}
+class CommentEntity extends Model { }
 
 CommentEntity.init(
   {
