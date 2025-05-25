@@ -1,36 +1,37 @@
-import { DataTypes, Model } from 'sequelize'
+import { DataTypes, Model, Sequelize } from 'sequelize'
 import { sequelize } from '../../../config/RelationalDataSource'
 
-class FollowingEntity extends Model {
-  [x: string]: any
+const defineModels = (sequelize: Sequelize) => {
+  class FollowingEntity extends Model {
+    [x: string]: any
+  }
+
+  FollowingEntity.init(
+    {
+      followFrom: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true,
+      },
+      followTo: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true,
+      },
+    },
+    {
+      sequelize: sequelize,
+      modelName: 'followings',
+      timestamps: true,
+      updatedAt: false,
+    },
+  )
 }
 
-FollowingEntity.init(
-  {
-    followFrom: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      primaryKey: true,
-    },
-    followTo: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      primaryKey: true,
-    },
-  },
-  {
-    sequelize: sequelize[1], //TODO fix
-    modelName: 'followings',
-    timestamps: true,
-    updatedAt: false,
-  },
-)
-
-try {
-  FollowingEntity.sync()
-} catch (error: any) {
-  console.log(error)
+const followEntityShards: any = {
+  1: defineModels(sequelize['1']),
+  2: defineModels(sequelize['2']),
+  3: defineModels(sequelize['3']),
 }
 
-
-export default FollowingEntity
+export default followEntityShards

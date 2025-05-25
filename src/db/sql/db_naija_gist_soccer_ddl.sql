@@ -1,3 +1,7 @@
+-- ALTER TABLE users AUTO_INCREMENT = 1
+
+CREATE database db_naija_gist_soccer;
+
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
@@ -141,3 +145,4 @@ CREATE TABLE comment_media (
   CONSTRAINT `comment_media_ibfk_1` FOREIGN KEY (`commentId`) REFERENCES comments (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+ALTER TABLE users AUTO_INCREMENT = 1

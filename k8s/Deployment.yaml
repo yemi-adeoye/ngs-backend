@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngs-deployment
+spec:
+  replicas: 0 # no of pod replicas to run based on template (using 3 here for initial load test)
+  selector:
+    matchLabels:
+      app: ngs
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: ngs
+        env: dev
+    spec:
+      containers:
+        - name: ngs-pods
+          image: ngs-backend:fork8
+          ports:
+            - containerPort: 5000
+          imagePullPolicy: Never

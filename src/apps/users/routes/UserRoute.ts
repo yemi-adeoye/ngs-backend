@@ -1,47 +1,35 @@
 import { Router } from 'express'
-import passport from 'passport'
 import { HttpStatusCode } from '../../../constants/HttpStatusCode'
-import { Logger } from '../../../middlewares/logger'
+import { ErrorCode } from '../models/ErrorCode'
 import { User } from '../models/Users'
 import { userService } from '../services/UserService'
-import { userExists } from '../middlewares/auth'
+
 export const userRouter = Router()
 
-const userRouteLogger = new Logger('UserRoute')
+userRouter.post('/', async (req: any, res) => {
+  const userDto: User = { ...req.body }
+  const user = await userService.createUser(userDto)
 
-userRouter.post(
-  '/',
-  userExists,
-  // passport.authenticate('register', { session: false }),
-  async (req: any, res) => {
-    const userDto: User = { ...req.body }
+  if (!user?.code) {
+    res.status(HttpStatusCode.CREATED).json({ user })
+    return
+  }
 
-    console.log({ user: req.user })
-
-    if (req.user?.registeredUser == null) {
-      userRouteLogger.log(`DUPLICATE USER: ${JSON.stringify(req.user)}`)
-
+  switch (user?.code) {
+    case ErrorCode.DUPLICATE_USER:
+      res.status(HttpStatusCode.BAD_REQUEST).json({ msg: user?.message })
+      break
+    case ErrorCode.SOME_WRONG:
+    default:
       res
-        .status(HttpStatusCode.BAD_REQUEST)
-        .json({ error: `User with username '${req.body?.email}' exists` })
-      return
-    }
-    try {
-      const user = await userService.createUser(userDto)
-      userRouteLogger.log(`creating user ${JSON.stringify(userDto)}`)
-      res.status(HttpStatusCode.CREATED).json(user)
-    } catch (error) {
-      userRouteLogger.error(`creating user ${error}`)
-      res
-        .status(HttpStatusCode.BAD_REQUEST)
-        .json({ error: 'Something went wrong' })
-    }
-  },
-)
+        .status(HttpStatusCode.INTERNAL_SERVER_ERROR)
+        .json({ msg: user?.message || 'Something went wrong' })
+  }
+})
 
 userRouter.patch(
   '/',
-  passport.authenticate('jwt', { session: false }),
+  // passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     const { updateFields } = req.body
 
@@ -71,20 +59,24 @@ userRouter.delete(
 
 userRouter.post(
   '/follow',
-  passport.authenticate('jwt', { session: false }),
+  // passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     const { followFrom, followTo } = req.body
 
-    if (!followFrom || !followTo) {
+    if (!followFrom || !followTo || followFrom == followTo) {
       res
         .status(HttpStatusCode.BAD_REQUEST)
-        .json({ error: 'Missing parameters' })
+        .json({ error: 'Missing or wrong parameters' })
       return
     }
 
-    await userService.followUser(followFrom, followTo)
+    const response = await userService.followUser(followFrom, followTo)
 
-    res.status(HttpStatusCode.CREATED).json({ message: true })
+    let statusCode = response
+      ? HttpStatusCode.CREATED
+      : HttpStatusCode.BAD_REQUEST
+
+    res.status(statusCode).json({ message: response })
   },
 )
 
@@ -116,7 +108,7 @@ userRouter.get(
 
 userRouter.get(
   '/:field/:key',
-  passport.authenticate('jwt', { session: false }),
+  // passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     const { field, key } = req.params
 

@@ -13,7 +13,7 @@ class MediaService {
   }
 
   isValidVideo(file: any) {
-    console.log(file) //TODO - delete me
+    console.log(file)
     return this.isValidVideoSize() && this.isValidVideoType()
   }
 

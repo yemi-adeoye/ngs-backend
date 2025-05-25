@@ -1,11 +1,10 @@
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 import { ExtractJwt, Strategy as JwtStrategy } from 'passport-jwt'
 import { Strategy as LocalStrategy } from 'passport-local'
-import { userService } from '../services/UserService'
-import { Logger } from '../../../middlewares/logger'
 import { HttpStatusCode } from '../../../constants/HttpStatusCode'
-import jwt from 'jsonwebtoken'
-import { User } from '../models/Users'
+import { Logger } from '../../../middlewares/logger'
+import { userService } from '../services/UserService'
 
 const authLogger = new Logger('Auth Logger')
 const MAX_LOGIN_BEFORE_SUSPENSION = 3
@@ -79,8 +78,7 @@ const handleLoginError = async (user: any) => {
       { where: { id: user.dataValues.id } },
     )
   } catch (error) {
-    authLogger.error(error + '')
-    console.log(error)
+    authLogger.error(`${error}`)
   }
 }
 
@@ -95,8 +93,7 @@ const handleLoginSuccess = async (user: any) => {
       { where: { id: user.dataValues.id } },
     )
   } catch (error) {
-    authLogger.error(error + '')
-    console.log(error)
+    authLogger.error(`${error}`)
   }
 }
 
@@ -132,7 +129,6 @@ const registrationHandler = async (
  * @returns
  */
 const login = async (email: string, password: string, done: Function) => {
-  console.log('Logging in ')
   try {
     let user = await userService.getUser('email', email)
 
@@ -210,15 +206,3 @@ export const verifyJwtStrategy = new JwtStrategy(
   },
   verifyJwtToken,
 )
-
-export const userExists = async (req: any, res: any, next: Function) => {
-  const userDto: User = { ...req.body }
-
-  req.user = {}
-
-  const userGlobal = await userService.createGlobalUser(userDto)
-
-  req.user.registeredUser = userGlobal?.dataValues
-
-  next()
-}

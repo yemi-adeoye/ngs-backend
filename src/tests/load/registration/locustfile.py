@@ -36,6 +36,10 @@ class HelloWorldUser(HttpUser):
     
         
     def on_start(self):
+        self.headers = {
+             "Content-Type": "application/json",
+             "Connection": "keep-alive"
+        }
         json = self.randomUserGenerator()
-        self.client.post('/users', json=json)
+        self.client.post('/users', json=json, headers=self.headers)
         

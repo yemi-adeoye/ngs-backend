@@ -2,29 +2,17 @@ import bcrypt from 'bcrypt'
 import { QueryTypes, Transaction } from 'sequelize'
 import { sequelize } from '../../../config/RelationalDataSource'
 import { Logger } from '../../../middlewares/logger'
-import FollowingEntity from '../entities/FollowEntity'
-import ProfileEntity from '../entities/ProfileEntity'
-import UserEntity from '../entities/UserEntity'
+import GlobalEntity from '../entities/GlobalEntity'
+import { ProfileEntity, profileEntityShards } from '../entities/ProfileEntity'
+import { userEntityShards } from '../entities/UserEntity'
+import { ErrorCode } from '../models/ErrorCode'
+import { NgsError } from '../models/NgsError'
 import { Profile } from '../models/Profile'
 import { User } from '../models/Users'
 import { graph } from './GraphService'
 import { queueService } from './QueueService'
-import GlobalEntity from '../entities/GlobalEntity'
-/**
- * Han
- */
-
-function* ShardResolver() {
-  let i = 0
-  while (true) {
-    if (i >= 3) {
-      i = 1
-    } else {
-      i++
-    }
-    yield i
-  }
-}
+import { getShardFromUserId, ShardResolver } from './ShardService'
+import followEntityShards from '../entities/FollowEntity'
 
 class UserService {
   private static instance: UserService
@@ -49,88 +37,148 @@ class UserService {
    * @param userDto the data object containing the user to be created's details
    * @returns
    */
-  async createUser(userDto: User): Promise<UserEntity | null> {
+  async createUser(
+    userDto: User,
+  ): Promise<(typeof userEntityShards)[1] | null | NgsError> {
     let result = null
-
-    const shardToWriteTo = this.shardResolver.next().value
-
-    console.log({ shardToWriteTo })
 
     try {
       // check global table to see if user exist // TODO write this code
+      const [userGlobal, hashedPassword] = await Promise.all([
+        userService.createGlobalUser(userDto),
+        this._hashPassword(`${userDto.password}`),
+      ])
 
-      result = await sequelize[`${shardToWriteTo}`].transaction(
-        async (t: any) => {
+      const shardKey = `${userGlobal?.dataValues.shard}`
+
+      userDto.password = hashedPassword
+
+      try {
+        await sequelize[shardKey].transaction(async (t: any) => {
           // populate user entity
-          const user: UserEntity = UserEntity.build({
+          const user: (typeof userEntityShards)[1] = userEntityShards[
+            shardKey
+          ].build({
             ...userDto,
           })
 
-          // update password with hashed value
-          user.dataValues.password = bcrypt.hashSync(
-            user.dataValues.password,
-            this.SALT_ROUNDS,
-          )
-
           const userDb = await user.save({ transaction: t })
 
-          const userProfile = ProfileEntity.build({
+          // create user's profile
+          const userProfile = profileEntityShards[shardKey].build({
             userId: userDb.dataValues.id,
           })
 
+          // save the user's profile
           await userProfile.save({ transaction: t })
 
-          return userDb
-        },
-      )
-    } catch (error) {
-      this.userServiceLogger.error(`${error}`)
+          result = userDb
+        })
+      } catch (error) {
+        // couldnt save user, delete from global table or offload to queue
+        this.userServiceLogger.error(`${error}`)
+
+        result = { code: ErrorCode.SOME_WRONG, message: 'Something went wrong' }
+      }
+    } catch (error: any) {
+      // user already exists, tell controller
+      result = {
+        code: ErrorCode.DUPLICATE_USER,
+        message: `User with ${userDto.email} or ${userDto.phone} exists`,
+      }
+      this.userServiceLogger.log(error?.parent.sqlMessage)
     }
 
     return result
   }
 
+  private _hashPassword(passwordRaw: string) {
+    return bcrypt.hash(passwordRaw, this.SALT_ROUNDS)
+  }
+
   async createGlobalUser(userDto: User): Promise<GlobalEntity | null> {
     const user: GlobalEntity = GlobalEntity.build({
       ...userDto,
+      shard: this.shardResolver.next().value,
     })
 
-    let userDb = null
+    return await user.save()
+  }
 
-    try {
-      userDb = await user.save()
-    } catch (error) {
-      this.userServiceLogger.error(`Cannot create user: ${userDto}, ${error}`)
+  async getGlobalUser(
+    key: string,
+    value: string,
+  ): Promise<GlobalEntity | null> {
+    const validKeys = ['email', 'phone']
+
+    if (!validKeys.includes(key)) {
+      this.userServiceLogger.error('Invalid key supplied to fetch global user')
+      throw new Error('Invalid key supplied to fetch global user')
     }
 
-    return userDb
+    try {
+      return await GlobalEntity.findOne({ where: { [key]: value } })
+    } catch (error) {
+      this.userServiceLogger.error(`${error}`)
+      return null
+    }
   }
 
   /**
    * Fetches a user by username or email
    */
-  getUser(key: string, value: string): Promise<UserEntity | null> {
-    return UserEntity.findOne({
-      where: { [key]: value },
-      include: { model: ProfileEntity, as: 'profile' },
-      attributes: [
-        'id',
-        'firstName',
-        'lastName',
-        'email',
-        'password',
-        'phone',
-        'dob',
-        'isSuspended',
-        'lastSuccessfulLogin',
-        'lastUnsuccessfulLogin',
-        'invalidLoginCount',
-        'createdAt',
-        'updatedAt',
-        'isActive',
-        'isSuspended',
-      ],
-    })
+  async getUser(
+    key: string,
+    value: string,
+  ): Promise<(typeof userEntityShards)[1] | null> {
+    // get user's shard from global table
+
+    try {
+      let userShard
+
+      if (key.toLocaleLowerCase() == 'id') {
+        userShard = getShardFromUserId(parseInt(value))
+      } else {
+        const globalUser = await GlobalEntity.findOne({
+          where: { [key]: value },
+          attributes: ['shard'],
+        })
+
+        if (!globalUser) {
+          return null
+        }
+
+        userShard = globalUser?.dataValues.shard
+      }
+
+      const user = await userEntityShards[userShard].findOne({
+        // const user = await userEntityShards['3'].findOne({
+        where: { [key]: value },
+        // include: { model: profileEntityShards[shard], as: 'profile' },
+        attributes: [
+          'id',
+          'firstName',
+          'lastName',
+          'email',
+          'password',
+          'phone',
+          'dob',
+          'isSuspended',
+          'lastSuccessfulLogin',
+          'lastUnsuccessfulLogin',
+          'invalidLoginCount',
+          'createdAt',
+          'updatedAt',
+          'isActive',
+          'isSuspended',
+        ],
+      })
+
+      return user
+    } catch (error: any) {
+      this.userServiceLogger.error(`${error}`)
+      return null
+    }
   }
 
   async updateUser(keyAndValues: Partial<User>) {
@@ -148,7 +196,7 @@ class UserService {
     const value = keyAndValues[key]
 
     try {
-      const userDb = await this.getUser(key, value + '')
+      const userDb = await this.getUser(key, `${value}`)
 
       const updateFields: Partial<User> = {}
 
@@ -156,7 +204,7 @@ class UserService {
         if (!ALLOWED_FIELDS.includes(key)) {
           throw new Error('Cannot update fields')
         }
-        keyAndValues[key] ? (updateFields[key] = keyAndValues[key]) : null
+        updateFields[key] = keyAndValues[key]
       })
 
       const updated = userDb?.update({ ...userDb?.dataValues, ...updateFields })
@@ -169,38 +217,73 @@ class UserService {
   }
 
   async deleteUser(key: any, value: any) {
-    return await this.updateUser({ [key]: value, isActive: false })
+    const updateFields = { isActive: false, [key]: value }
+
+    // return await this.updateUser({ [key]: value, isActive: false })
+    return await this.updateUser({ ...updateFields })
   }
 
   async persistUserFollow(
     followFrom: string | number,
     followTo: string | number,
+    shard: number,
   ): Promise<boolean> {
     try {
-      await sequelize[0].transaction(async (t: any) => {
-        //TODO fix
-        // create follow
-        const followEntity = FollowingEntity.build({ followFrom, followTo })
-
-        followEntity.save({ transaction: t })
-
-        // increase follower and following count
-        const followFromUserProfile = await this.getProfileByUserId(followFrom)
-        const followToUserProfile = await this.getProfileByUserId(followTo)
-
-        const followFromCountUpdate: Partial<Profile> = {
-          followingCount: followFromUserProfile?.dataValues.followingCount + 1,
-        }
-        const followToCountUpdate: Partial<Profile> = {
-          followersCount: followToUserProfile?.dataValues.followersCount + 1,
-        }
-
-        await this.updateProfile(followFrom, followFromCountUpdate, t)
-        await this.updateProfile(followTo, followToCountUpdate, t)
+      // await sequelize[0].transaction(async (t: any) => {
+      //TODO fix
+      // create follow
+      const followEntity = followEntityShards[shard].build({
+        followFrom,
+        followTo,
       })
+
+      followEntity.save()
+
+      // // increase follower and following count
+      // const followFromUserProfile = await this.getProfileByUserId(followFrom)
+      // const followToUserProfile = await this.getProfileByUserId(followTo)
+
+      // const followFromCountUpdate: Partial<Profile> = {
+      //   followingCount: followFromUserProfile?.dataValues.followingCount + 1,
+      // }
+      // const followToCountUpdate: Partial<Profile> = {
+      //   followersCount: followToUserProfile?.dataValues.followersCount + 1,
+      // }
+
+      // await this.updateProfile(followFrom, followFromCountUpdate, t)
+      // await this.updateProfile(followTo, followToCountUpdate, t)
+      // })
       return true
     } catch (error) {
       this.userServiceLogger.error(error + '')
+    }
+
+    return false
+  }
+
+  async persistUserFollowAll(
+    follows: { followFrom: string | number; followTo: string | number }[],
+    shard: number,
+  ): Promise<boolean> {
+    this.userServiceLogger.log(`persisting bulk follow to db`)
+
+    const values = follows.map(() => '(?, ?, ?)').join(', ')
+    const replacements = []
+
+    for (let { followFrom, followTo } of follows) {
+      replacements.push(followFrom, followTo, new Date(Date.now()))
+    }
+
+    const sql = ` INSERT INTO followings (followFrom, followTo, createdAt) VALUES ${values} `
+
+    try {
+      await sequelize[shard].query(sql, {
+        replacements,
+        type: QueryTypes.INSERT,
+      })
+      return true
+    } catch (error) {
+      this.userServiceLogger.error(`${error}`)
     }
 
     return false
@@ -211,18 +294,21 @@ class UserService {
     followTo: string | number,
   ): Promise<boolean> {
     try {
-      await graph.createFollow(followFrom, followTo)
+      graph.createFollow(followFrom, followTo)
+
+      const shard = getShardFromUserId(followTo) || 1
 
       // write task to queue for future processing
-      const job = { name: 'follow', data: { followFrom, followTo } }
+      const job = { name: 'follow', data: { followFrom, followTo, shard } }
 
-      await queueService.queue.add(job.name, job.data)
+      queueService.queue[shard].add(job.name, job.data)
+
+      return true
     } catch (error) {
-      this.userServiceLogger.error(error + '')
-      return false
+      this.userServiceLogger.error(`${error}`)
     }
 
-    return true
+    return false
   }
 
   async getFollowers(userId: string, offset: string): Promise<any> {

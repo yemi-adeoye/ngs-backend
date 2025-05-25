@@ -13,8 +13,6 @@ profileRouter.patch(
     const { userId, userToFollowId } = req.body
     const result = await userService.followUser(userId, userToFollowId)
 
-    console.log({ result })
-
     res.status(HttpStatusCode.OK).json({ msg: result })
   },
 )

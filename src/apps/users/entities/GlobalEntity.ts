@@ -1,7 +1,7 @@
 import { DataTypes, Model } from 'sequelize'
 import { sequelize } from '../../../config/RelationalDataSource'
 
-class GlobalEntity extends Model { }
+class GlobalEntity extends Model {}
 
 GlobalEntity.init(
   {
@@ -15,6 +15,10 @@ GlobalEntity.init(
     //     allowNull: true,
     //     unique: true
     // }
+    shard: {
+      type: DataTypes.SMALLINT,
+      defaultValue: 1,
+    },
 
     email: {
       type: DataTypes.STRING,

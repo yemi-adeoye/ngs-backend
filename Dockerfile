@@ -4,9 +4,11 @@ WORKDIR /ngs
 
 LABEL maintainer="Yemi Adeoye"
 
-COPY ./package*.json dist .docker.env /ngs/
+COPY ./package*.json dist *.env /ngs/
 
-RUN ["npm", "install", "--omit=dev"]
+# RUN ["npm", "run", "build"]
+
+RUN ["npm", "install"]
 
 FROM node:23-alpine
 

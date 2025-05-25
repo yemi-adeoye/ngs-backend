@@ -38,13 +38,13 @@ export class Logger {
 
   warn(message: string) {
     if (this.level == LogLevels.ERROR || this.level == LogLevels.WARN) {
-      console.warn(`INFO: ${this.className}: ${new Date()}: ${message}`)
+      console.warn(`WARN: ${this.className}: ${new Date()}: ${message}`)
     }
   }
 
   error(message: string) {
     if (this.level == LogLevels.ERROR) {
-      console.error(`INFO: ${this.className}: ${new Date()}: ${message}`)
+      console.error(`ERROR: ${this.className}: ${new Date()}: ${message}`)
     }
   }
 }

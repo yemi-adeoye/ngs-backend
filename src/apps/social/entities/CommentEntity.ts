@@ -2,13 +2,13 @@ import { DataTypes, Model } from 'sequelize'
 import { sequelize } from '../../../config/RelationalDataSource'
 import CommentMediaEntity from './CommentMediaEntity'
 import CommentReactionEntity from './CommentReactionEntity'
-import UserEntity from '../../users/entities/UserEntity'
-import ProfileEntity from '../../users/entities/ProfileEntity'
+import { userEntityShards } from '../../users/entities/UserEntity'
+import { ProfileEntity } from '../../users/entities/ProfileEntity'
 import PostEntity from './PostEntity'
 import PostReactionEntity from './PostReactionEntity'
 import PostMediaEntity from './PostMediaEntity'
 
-class CommentEntity extends Model { }
+class CommentEntity extends Model {}
 
 CommentEntity.init(
   {
@@ -43,10 +43,10 @@ CommentEntity.init(
   },
 )
 
-UserEntity.hasOne(ProfileEntity, {
+userEntityShards[1].hasOne(ProfileEntity, {
   foreignKey: { name: 'userId', allowNull: false },
 })
-ProfileEntity.belongsTo(UserEntity)
+ProfileEntity.belongsTo(userEntityShards[1])
 
 // comment - media relationship
 CommentEntity.hasMany(CommentMediaEntity, {
@@ -61,16 +61,16 @@ CommentEntity.hasMany(CommentReactionEntity, {
 CommentReactionEntity.belongsTo(CommentEntity)
 
 // Comment User Relationship
-UserEntity.hasMany(CommentEntity, {
+userEntityShards[1].hasMany(CommentEntity, {
   foreignKey: { name: 'userId', allowNull: false },
 })
-CommentEntity.belongsTo(UserEntity)
+CommentEntity.belongsTo(userEntityShards[1])
 
 // User - CommentReactionEntity
-UserEntity.hasMany(CommentReactionEntity, {
+userEntityShards[1].hasMany(CommentReactionEntity, {
   foreignKey: { name: 'userId', allowNull: false },
 })
-CommentReactionEntity.belongsTo(UserEntity)
+CommentReactionEntity.belongsTo(userEntityShards[1])
 
 // post -media relationship
 PostEntity.hasMany(PostMediaEntity, {
@@ -91,20 +91,20 @@ PostEntity.hasMany(PostReactionEntity, {
 PostReactionEntity.belongsTo(PostEntity)
 
 // post User Relationship
-UserEntity.hasMany(PostEntity, {
+userEntityShards[1].hasMany(PostEntity, {
   foreignKey: { name: 'userId', allowNull: false },
 })
-PostEntity.belongsTo(UserEntity)
+PostEntity.belongsTo(userEntityShards[1])
 
-UserEntity.sync()
-ProfileEntity.sync()
+// UserEntity.sync()
+// ProfileEntity.sync()
 
-CommentEntity.sync()
-CommentReactionEntity.sync()
-CommentMediaEntity.sync()
+// CommentEntity.sync()
+// CommentReactionEntity.sync()
+// CommentMediaEntity.sync()
 
-PostEntity.sync()
-PostReactionEntity.sync()
-PostMediaEntity.sync()
+// PostEntity.sync()
+// PostReactionEntity.sync()
+// PostMediaEntity.sync()
 
 export default CommentEntity

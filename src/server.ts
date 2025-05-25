@@ -20,7 +20,7 @@ import { commentRouter } from './apps/social/routes/CommentsRoutes'
 import { postRouter } from './apps/social/routes/PostRoutes'
 
 const app = express()
-const PORT = process.env.SERVER_PORT
+const PORT = 5001 //process.env.SERVER_PORT
 
 /**
  * MIDDLEWARES
